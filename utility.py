@@ -70,6 +70,7 @@ def draw_age_gender_emotion(face_boxes, image):
 
             font_scale = image.shape[1] / 750
             text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
+            print(f"Drawing box for {text} at {xmin}, {ymin}, {xmax}, {ymax}")
             cv2.putText(show_image, text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), 2)
             cv2.rectangle(show_image, (xmin, ymin), (xmax, ymax), box_color, 2)
 
