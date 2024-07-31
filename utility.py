@@ -52,6 +52,10 @@ def find_faceboxes(image, results, confidence_threshold):
     face_boxes = np.clip(face_boxes, 0, [image_w, image_h, image_w, image_h])  # Ensure box is within image boundaries
     face_boxes = face_boxes.astype(np.int64)
 
+    # Log the face boxes for debugging
+    for i, box in enumerate(face_boxes):
+        print(f"Face {i}: {box}, Score: {scores[i]}")
+
     return face_boxes, scores
 
 def draw_age_gender_emotion(face_boxes, image):
