@@ -1,4 +1,3 @@
-# project.py
 import openvino as ov
 import cv2
 import numpy as np
@@ -30,25 +29,29 @@ def preprocess(image, input_layer):
     input_image = np.expand_dims(transposed_image, 0)
     return input_image
 
-def find_faceboxes(results, confidence_threshold):
+def find_faceboxes(image, results, confidence_threshold):
     results = results.squeeze()
     scores = results[:, 2]
-    boxes = results[:, 3:]
+    boxes = results[:, -4:]
 
     face_boxes = boxes[scores >= confidence_threshold]
     scores = scores[scores >= confidence_threshold]
 
+    image_h, image_w, _ = image.shape
+    face_boxes = face_boxes * np.array([image_w, image_h, image_w, image_h])
+    face_boxes = face_boxes.astype(np.int64)
+
     return face_boxes, scores
 
 def draw_age_gender_emotion(face_boxes, image):
-    EMOTION_NAMES = ['neutral', 'happy', 'ad', 'surprise', 'anger']
+    EMOTION_NAMES = ['neutral', 'happy', 'sad', 'surprise', 'anger']
     show_image = image.copy()
 
     for i in range(len(face_boxes)):
         xmin, ymin, xmax, ymax = face_boxes[i]
         face = image[ymin:ymax, xmin:xmax]
 
-        if face.size == 0 or len(face.shape)!= 3 or face.shape[2]!= 3:
+        if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
             print(f"Skipping empty or invalid face image at index {i}.")
             continue
 
@@ -79,14 +82,13 @@ def predict_image(image, conf_threshold):
     try:
         input_image = preprocess(image, input_layer_face)
         results = compiled_model_face([input_image])[output_layer_face]
-        face_boxes, scores = find_faceboxes(results, conf_threshold)
+        face_boxes, scores = find_faceboxes(image, results, conf_threshold)
         if len(face_boxes) == 0:
             print("No face boxes found.")
-            return image
         else:
             print(f"Found {len(face_boxes)} face boxes.")
-            visualize_image = draw_age_gender_emotion(face_boxes, image)
-            return visualize_image
+        visualize_image = draw_age_gender_emotion(face_boxes, image)
+        return visualize_image
     except Exception as e:
         print(f"Error in predict_image: {e}")
         return image
