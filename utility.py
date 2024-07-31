@@ -4,20 +4,22 @@ import numpy as np
 
 core = ov.Core()
 
+# Load models
 model_face = core.read_model(model='models/face-detection-adas-0001.xml')
 compiled_model_face = core.compile_model(model=model_face, device_name="CPU")
-
-input_layer_face = compiled_model_face.input(0)
-output_layer_face = compiled_model_face.output(0)
 
 model_emo = core.read_model(model='models/emotions-recognition-retail-0003.xml')
 compiled_model_emo = core.compile_model(model=model_emo, device_name="CPU")
 
-input_layer_emo = compiled_model_emo.input(0)
-output_layer_emo = compiled_model_emo.output(0)
-
 model_ag = core.read_model(model='models/age-gender-recognition-retail-0013.xml')
 compiled_model_ag = core.compile_model(model=model_ag, device_name="CPU")
+
+# Get input and output layers
+input_layer_face = compiled_model_face.input(0)
+output_layer_face = compiled_model_face.output(0)
+
+input_layer_emo = compiled_model_emo.input(0)
+output_layer_emo = compiled_model_emo.output(0)
 
 input_layer_ag = compiled_model_ag.input(0)
 output_layer_ag = compiled_model_ag.output(0)
@@ -34,13 +36,12 @@ def find_faceboxes(image, results, confidence_threshold):
     scores = results[:, 2]
     boxes = results[:, -4:]
 
-    high_conf_indices = scores >= confidence_threshold
-    face_boxes = boxes[high_conf_indices]
-    scores = scores[high_conf_indices]
+    face_boxes = boxes[scores >= confidence_threshold]
+    scores = scores[scores >= confidence_threshold]
 
     image_h, image_w, _ = image.shape
     face_boxes = face_boxes * np.array([image_w, image_h, image_w, image_h])
-    face_boxes = face_boxes.astype(np.int32)
+    face_boxes = face_boxes.astype(np.int64)
 
     return face_boxes, scores
 
@@ -69,7 +70,7 @@ def draw_age_gender_emotion(face_boxes, image):
             gender_str = "female" if gender[0] > 0.65 else "male" if gender[1] >= 0.55 else "unknown"
             box_color = (200, 200, 0) if gender_str == "female" else (0, 200, 200) if gender_str == "male" else (200, 200, 200)
 
-            font_scale = max(0.5, image.shape[1] / 750)
+            font_scale = image.shape[1] / 750
             text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
             print(f"Drawing box for {text} at {xmin}, {ymin}, {xmax}, {ymax}")
             cv2.putText(show_image, text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), 2)
