@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("AI Workforce Safety Systemt :construction_worker::construction:")
+st.title(":construction: AI Workforce Safety System :construction_worker:")
 
 st.sidebar.header("Type of PPE Detection")
 source_radio = st.sidebar.radio("Select Source", ["IMAGE", "VIDEO", "WEBCAM"])
