@@ -13,7 +13,7 @@ USER_CREDENTIALS = {
 def play_video(video_source):
     camera = cv2.VideoCapture(video_source)
     st_frame = st.empty()
-    while(camera.isOpened()):
+    while camera.isOpened():
         ret, frame = camera.read()
         if ret:
             try:
