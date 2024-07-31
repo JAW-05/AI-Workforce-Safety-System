@@ -41,7 +41,7 @@ def find_faceboxes(image, results, confidence_threshold):
     scores = scores[mask]
     boxes = boxes[mask]
 
-    # Filter out boxes with invalid values (NaN, Inf, or negative coordinates)
+    # Filter out boxes with invalid values
     valid_mask = np.all(np.isfinite(boxes), axis=1) & np.all(boxes >= 0, axis=1)
     boxes = boxes[valid_mask]
     scores = scores[valid_mask]
