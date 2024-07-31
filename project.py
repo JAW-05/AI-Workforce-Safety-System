@@ -5,73 +5,87 @@ import numpy as np
 import utility
 import io
 
+# Define user credentials
+USER_CREDENTIALS = {
+    "admin": "password123"
+}
+
 def play_video(video_source):
     camera = cv2.VideoCapture(video_source)
-
     st_frame = st.empty()
     while(camera.isOpened()):
         ret, frame = camera.read()
-
         if ret:
             visualized_image = utility.predict_image(frame, conf_threshold = conf_threshold)
             st_frame.image(visualized_image, channels = "BGR")
-
         else:
             camera.release()
             break
 
-st.set_page_config(
-    page_title="AI Workforce Safety System",
-    page_icon=":construction_worker:",
-    layout="centered",
-    initial_sidebar_state="expanded",
-)
+def login():
+    st.title("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
+            st.session_state["logged_in"] = True
+            st.success("Login successful")
+        else:
+            st.error("Invalid username or password")
 
-st.title(":construction: AI Workforce Safety System :construction_worker:")
+# Initialize session state
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
-st.sidebar.header("Type of PPE Detection")
-source_radio = st.sidebar.radio("Select Source", ["IMAGE", "VIDEO", "WEBCAM"])
+if not st.session_state["logged_in"]:
+    login()
+else:
+    st.set_page_config(
+        page_title="AI Workforce Safety System",
+        page_icon=":construction_worker:",
+        layout="centered",
+        initial_sidebar_state="expanded",
+    )
 
-st.sidebar.header("Confidence")
-conf_threshold = float(st.sidebar.slider("Select the Confidence Threshold", 10, 100, 20))/100
+    st.title(":construction: AI Workforce Safety System :construction_worker:")
 
-input = None
-if source_radio == "IMAGE":
-    st.sidebar.header("Upload")
-    input = st.sidebar.file_uploader("Choose an image", type = ("jpg", "png"))
+    st.sidebar.header("Type of PPE Detection")
+    source_radio = st.sidebar.radio("Select Source", ["IMAGE", "VIDEO", "WEBCAM"])
 
-    if input is not None:
-        uploaded_image = PIL.Image.open(input)
-        uploaded_image_cv = cv2.cvtColor(np.array(uploaded_image), cv2.COLOR_RGB2BGR)
-        visualized_image = utility.predict_image(uploaded_image_cv, conf_threshold = conf_threshold)
+    st.sidebar.header("Confidence")
+    conf_threshold = float(st.sidebar.slider("Select the Confidence Threshold", 10, 100, 20))/100
 
-        
-        st.image(visualized_image, channels = "BGR")
+    input = None
+    if source_radio == "IMAGE":
+        st.sidebar.header("Upload")
+        input = st.sidebar.file_uploader("Choose an image", type = ("jpg", "png"))
 
-    else:
-        st.image("assets/thumbnail.jpg")
-        st.write("Click on 'Browse Files' in the sidebar to run inference on an image.")
+        if input is not None:
+            uploaded_image = PIL.Image.open(input)
+            uploaded_image_cv = cv2.cvtColor(np.array(uploaded_image), cv2.COLOR_RGB2BGR)
+            visualized_image = utility.predict_image(uploaded_image_cv, conf_threshold = conf_threshold)
+            st.image(visualized_image, channels = "BGR")
+        else:
+            st.image("assets/thumbnail.jpg")
+            st.write("Click on 'Browse Files' in the sidebar to run inference on an image.")
 
-temporary_location = None
-if source_radio == "VIDEO":
-    st.sidebar.header("Upload")
-    input = st.sidebar.file_uploader("Choose a video", type = ("mp4"))
+    temporary_location = None
+    if source_radio == "VIDEO":
+        st.sidebar.header("Upload")
+        input = st.sidebar.file_uploader("Choose a video", type = ("mp4"))
 
-    if input is not None:
-        g = io.BytesIO(input.read())
-        temporary_location = "upload.mp4"
+        if input is not None:
+            g = io.BytesIO(input.read())
+            temporary_location = "upload.mp4"
+            with open(temporary_location, "wb") as out:
+                out.write(g.read())
+            out.close()
 
-        with open(temporary_location, "wb") as out:
-            out.write(g.read())
+        if temporary_location is not None:
+            play_video(temporary_location)
+        else:
+            st.video("assets/thumbnail.jpg")
+            st.write("Click on 'Browse Files' in the sidebar to run inference on a video.")
 
-        out.close()
-
-    if temporary_location is not None:
-        play_video(temporary_location)
-
-    else:
-        st.video("assets/thumbnail.jpg")
-        st.write("Click on 'Browse Files' in the sidebar to run inference on a video.")
-
-if source_radio == "WEBCAM":
+    if source_radio == "WEBCAM":
         play_video(0)
