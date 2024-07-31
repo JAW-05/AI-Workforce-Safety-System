@@ -43,6 +43,12 @@ def find_faceboxes(image, results, confidence_threshold):
 
     return face_boxes, scores
 
+def draw_face_boxes(face_boxes, image):
+    for box in face_boxes:
+        xmin, ymin, xmax, ymax = box
+        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+    return image
+
 def draw_age_gender_emotion(face_boxes, image):
     EMOTION_NAMES = ['neutral', 'happy', 'sad', 'surprise', 'anger']
     show_image = image.copy()
@@ -82,13 +88,14 @@ def predict_image(image, conf_threshold):
     try:
         input_image = preprocess(image, input_layer_face)
         results = compiled_model_face([input_image])[output_layer_face]
+        print("Face detection results:", results.shape)  # Check the shape of the results
         face_boxes, scores = find_faceboxes(image, results, conf_threshold)
         if len(face_boxes) == 0:
             print("No face boxes found.")
         else:
             print(f"Found {len(face_boxes)} face boxes.")
-        visualize_image = draw_age_gender_emotion(face_boxes, image)
+        image_with_boxes = draw_face_boxes(face_boxes, image)
+        visualize_image = draw_age_gender_emotion(face_boxes, image_with_boxes)
         return visualize_image
     except Exception as e:
-        print(f"Error in predict_image: {e}")
-        return image
+        print(f
