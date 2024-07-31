@@ -49,7 +49,7 @@ if source_radio == "IMAGE":
         st.image(visualized_image, channels = "BGR")
 
     else:
-        st.image("assets/sample_image.jpeg")
+        st.image("assets/thumbnail.jpg")
         st.write("Click on 'Browse Files' in the sidebar to run inference on an image.")
 
 temporary_location = None
@@ -70,7 +70,7 @@ if source_radio == "VIDEO":
         play_video(temporary_location)
 
     else:
-        st.video("assets/sample_video.mp4")
+        st.video("assets/thumbnail.jpg")
         st.write("Click on 'Browse Files' in the sidebar to run inference on a video.")
 
 if source_radio == "WEBCAM":
