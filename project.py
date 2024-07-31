@@ -23,6 +23,7 @@ def play_video(video_source):
             break
 
 def login():
+    st.title("AI Workforce Safety System")
     st.title("Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
