@@ -24,18 +24,9 @@ output_layer_ag = compiled_model_ag.output(0)
 
 def preprocess(image, input_layer):
     N, input_channels, input_height, input_width = input_layer.shape
-
-    # Ensure the image has the correct dimensions
-    if len(image.shape) != 3 or image.shape[2] != 3:
-        raise ValueError("Input image must have 3 dimensions (H, W, C) with 3 channels.")
-    
-    if image.size == 0:
-        raise ValueError("Empty image provided for preprocessing.")
-
     resized_image = cv2.resize(image, (input_width, input_height))
     transposed_image = resized_image.transpose(2, 0, 1)
     input_image = np.expand_dims(transposed_image, 0)
-
     return input_image
 
 def find_faceboxes(image, results, confidence_threshold):
@@ -60,34 +51,22 @@ def draw_age_gender_emotion(face_boxes, image):
         xmin, ymin, xmax, ymax = face_boxes[i]
         face = image[ymin:ymax, xmin:xmax]
 
-        # Check if the face image is empty
         if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
             print(f"Skipping empty or invalid face image at index {i}.")
             continue
 
         try:
-            # Emotion
             input_image = preprocess(face, input_layer_emo)
             results_emo = compiled_model_emo([input_image])[output_layer_emo]
             results_emo = results_emo.squeeze()
             index = np.argmax(results_emo)
 
-            # Age and Gender
             input_image_ag = preprocess(face, input_layer_ag)
             results_ag = compiled_model_ag([input_image_ag])
-            age, gender = results_ag[1], results_ag[0]
-            age = int(np.squeeze(age) * 100)
-
-            gender = np.squeeze(gender)
-            if gender[0] > 0.65:
-                gender_str = "female"
-                box_color = (200, 200, 0)
-            elif gender[1] >= 0.55:
-                gender_str = "male"
-                box_color = (0, 200, 200)
-            else:
-                gender_str = "unknown"
-                box_color = (200, 200, 200)
+            age = int(np.squeeze(results_ag[1]) * 100)
+            gender = np.squeeze(results_ag[0])
+            gender_str = "female" if gender[0] > 0.65 else "male" if gender[1] >= 0.55 else "unknown"
+            box_color = (200, 200, 0) if gender_str == "female" else (0, 200, 200) if gender_str == "male" else (200, 200, 200)
 
             font_scale = image.shape[1] / 750
             text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
@@ -104,6 +83,10 @@ def predict_image(image, conf_threshold):
         input_image = preprocess(image, input_layer_face)
         results = compiled_model_face([input_image])[output_layer_face]
         face_boxes, scores = find_faceboxes(image, results, conf_threshold)
+        if len(face_boxes) == 0:
+            print("No face boxes found.")
+        else:
+            print(f"Found {len(face_boxes)} face boxes.")
         visualize_image = draw_age_gender_emotion(face_boxes, image)
         return visualize_image
     except Exception as e:
