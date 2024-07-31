@@ -91,7 +91,7 @@ def draw_age_gender_emotion(face_boxes, image):
 
             font_scale = image.shape[1] / 750
             text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
-            cv2.putText(show_image, text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 200, 0), 2)
+            cv2.putText(show_image, text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), 2)
             cv2.rectangle(show_image, (xmin, ymin), (xmax, ymax), box_color, 2)
 
         except Exception as e:
@@ -100,9 +100,12 @@ def draw_age_gender_emotion(face_boxes, image):
     return show_image
 
 def predict_image(image, conf_threshold):
-    input_image = preprocess(image, input_layer_face)
-    results = compiled_model_face([input_image])[output_layer_face]
-    face_boxes, scores = find_faceboxes(image, results, conf_threshold)
-    visualize_image = draw_age_gender_emotion(face_boxes, image)
-
-    return visualize_image
+    try:
+        input_image = preprocess(image, input_layer_face)
+        results = compiled_model_face([input_image])[output_layer_face]
+        face_boxes, scores = find_faceboxes(image, results, conf_threshold)
+        visualize_image = draw_age_gender_emotion(face_boxes, image)
+        return visualize_image
+    except Exception as e:
+        print(f"Error in predict_image: {e}")
+        return image
