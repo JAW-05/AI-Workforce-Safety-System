@@ -22,12 +22,12 @@ def play_video(video_source):
 
 st.set_page_config(
     page_title="AI Workforce Safety System",
-    page_icon=":construction_man:",
+    page_icon=":construction_worker:",
     layout="centered",
     initial_sidebar_state="expanded",
 )
 
-st.title("AI Workforce Safety Systemt :construction_man::construction_sign:")
+st.title("AI Workforce Safety Systemt :construction_worker::construction:")
 
 st.sidebar.header("Type of PPE Detection")
 source_radio = st.sidebar.radio("Select Source", ["IMAGE", "VIDEO", "WEBCAM"])
