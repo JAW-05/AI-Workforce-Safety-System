@@ -41,16 +41,16 @@ def find_faceboxes(image, results, confidence_threshold):
     scores = scores[mask]
     boxes = boxes[mask]
 
+    # Ensure boxes are within valid ranges
+    image_h, image_w, _ = image.shape
+    boxes = np.clip(boxes, 0, [image_w, image_h, image_w, image_h])
+
     # Filter out boxes with invalid values
     valid_mask = np.all(np.isfinite(boxes), axis=1) & np.all(boxes >= 0, axis=1)
     boxes = boxes[valid_mask]
     scores = scores[valid_mask]
 
-    # Convert coordinates to image scale
-    image_h, image_w, _ = image.shape
-    face_boxes = boxes * np.array([image_w, image_h, image_w, image_h])
-    face_boxes = np.clip(face_boxes, 0, [image_w, image_h, image_w, image_h])  # Ensure box is within image boundaries
-    face_boxes = face_boxes.astype(np.int64)
+    face_boxes = boxes.astype(np.int64)
 
     # Log the face boxes for debugging
     for i, box in enumerate(face_boxes):
@@ -64,6 +64,11 @@ def draw_age_gender_emotion(face_boxes, image):
 
     for i in range(len(face_boxes)):
         xmin, ymin, xmax, ymax = face_boxes[i]
+
+        if xmin < 0 or ymin < 0 or xmax > image.shape[1] or ymax > image.shape[0]:
+            print(f"Invalid facebox coordinates: {face_boxes[i]}")
+            continue
+
         face = image[ymin:ymax, xmin:xmax]
 
         if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
