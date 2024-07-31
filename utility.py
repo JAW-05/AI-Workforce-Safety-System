@@ -28,6 +28,9 @@ def preprocess(image, input_layer):
     # Ensure the image has the correct dimensions
     if len(image.shape) != 3 or image.shape[2] != 3:
         raise ValueError("Input image must have 3 dimensions (H, W, C) with 3 channels.")
+    
+    if image.size == 0:
+        raise ValueError("Empty image provided for preprocessing.")
 
     resized_image = cv2.resize(image, (input_width, input_height))
     transposed_image = resized_image.transpose(2, 0, 1)
@@ -57,33 +60,42 @@ def draw_age_gender_emotion(face_boxes, image):
         xmin, ymin, xmax, ymax = face_boxes[i]
         face = image[ymin:ymax, xmin:xmax]
 
-        # Emotion
-        input_image = preprocess(face, input_layer_emo)
-        results_emo = compiled_model_emo([input_image])[output_layer_emo]
-        results_emo = results_emo.squeeze()
-        index = np.argmax(results_emo)
+        # Check if the face image is empty
+        if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
+            print(f"Skipping empty or invalid face image at index {i}.")
+            continue
 
-        # Age and Gender
-        input_image_ag = preprocess(face, input_layer_ag)
-        results_ag = compiled_model_ag([input_image_ag])
-        age, gender = results_ag[1], results_ag[0]
-        age = int(np.squeeze(age) * 100)
+        try:
+            # Emotion
+            input_image = preprocess(face, input_layer_emo)
+            results_emo = compiled_model_emo([input_image])[output_layer_emo]
+            results_emo = results_emo.squeeze()
+            index = np.argmax(results_emo)
 
-        gender = np.squeeze(gender)
-        if gender[0] > 0.65:
-            gender_str = "female"
-            box_color = (200, 200, 0)
-        elif gender[1] >= 0.55:
-            gender_str = "male"
-            box_color = (0, 200, 200)
-        else:
-            gender_str = "unknown"
-            box_color = (200, 200, 200)
+            # Age and Gender
+            input_image_ag = preprocess(face, input_layer_ag)
+            results_ag = compiled_model_ag([input_image_ag])
+            age, gender = results_ag[1], results_ag[0]
+            age = int(np.squeeze(age) * 100)
 
-        font_scale = image.shape[1] / 750
-        text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
-        cv2.putText(show_image, text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 200, 0), 2)
-        cv2.rectangle(show_image, (xmin, ymin), (xmax, ymax), box_color, 2)
+            gender = np.squeeze(gender)
+            if gender[0] > 0.65:
+                gender_str = "female"
+                box_color = (200, 200, 0)
+            elif gender[1] >= 0.55:
+                gender_str = "male"
+                box_color = (0, 200, 200)
+            else:
+                gender_str = "unknown"
+                box_color = (200, 200, 200)
+
+            font_scale = image.shape[1] / 750
+            text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
+            cv2.putText(show_image, text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 200, 0), 2)
+            cv2.rectangle(show_image, (xmin, ymin), (xmax, ymax), box_color, 2)
+
+        except Exception as e:
+            print(f"Error processing face at index {i}: {e}")
 
     return show_image
 
