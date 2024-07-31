@@ -1,13 +1,7 @@
-import PIL
+import openvino as ov
 import cv2
 import numpy as np
-import utility
-import io
 
-# Define user credentials
-# ...
-
-# Load the models
 core = ov.Core()
 
 model_face = core.read_model(model='models/face-detection-adas-0001.xml')
@@ -49,12 +43,52 @@ def find_faceboxes(image, results, confidence_threshold):
 
     return face_boxes, scores
 
-def draw_face_boxes(face_boxes, image):
-    for box in face_boxes:
-        xmin, ymin, xmax, ymax = box
-        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
-    return image
-
 def draw_age_gender_emotion(face_boxes, image):
     EMOTION_NAMES = ['neutral', 'happy', 'sad', 'surprise', 'anger']
-    # ...
+    show_image = image.copy()
+
+    for i in range(len(face_boxes)):
+        xmin, ymin, xmax, ymax = face_boxes[i]
+        face = image[ymin:ymax, xmin:xmax]
+
+        if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
+            print(f"Skipping empty or invalid face image at index {i}.")
+            continue
+
+        try:
+            input_image = preprocess(face, input_layer_emo)
+            results_emo = compiled_model_emo([input_image])[output_layer_emo]
+            results_emo = results_emo.squeeze()
+            index = np.argmax(results_emo)
+
+            input_image_ag = preprocess(face, input_layer_ag)
+            results_ag = compiled_model_ag([input_image_ag])
+            age = int(np.squeeze(results_ag[1]) * 100)
+            gender = np.squeeze(results_ag[0])
+            gender_str = "female" if gender[0] > 0.65 else "male" if gender[1] >= 0.55 else "unknown"
+            box_color = (200, 200, 0) if gender_str == "female" else (0, 200, 200) if gender_str == "male" else (200, 200, 200)
+
+            font_scale = image.shape[1] / 750
+            text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
+            cv2.putText(show_image, text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), 2)
+            cv2.rectangle(show_image, (xmin, ymin), (xmax, ymax), box_color, 2)
+
+        except Exception as e:
+            print(f"Error processing face at index {i}: {e}")
+
+    return show_image
+
+def predict_image(image, conf_threshold):
+    try:
+        input_image = preprocess(image, input_layer_face)
+        results = compiled_model_face([input_image])[output_layer_face]
+        face_boxes, scores = find_faceboxes(image, results, conf_threshold)
+        if len(face_boxes) == 0:
+            print("No face boxes found.")
+        else:
+            print(f"Found {len(face_boxes)} face boxes.")
+        visualize_image = draw_age_gender_emotion(face_boxes, image)
+        return visualize_image
+    except Exception as e:
+        print(f"Error in predict_image: {e}")
+        return image
