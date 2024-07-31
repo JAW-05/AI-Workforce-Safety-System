@@ -32,7 +32,7 @@ def preprocess(image, input_layer):
 def find_faceboxes(image, results, confidence_threshold):
     results = results.squeeze()
     scores = results[:, 2]
-    boxes = results[:, -4:]
+    boxes = results[:, 3:]
 
     face_boxes = boxes[scores >= confidence_threshold]
     scores = scores[scores >= confidence_threshold]
@@ -44,14 +44,14 @@ def find_faceboxes(image, results, confidence_threshold):
     return face_boxes, scores
 
 def draw_age_gender_emotion(face_boxes, image):
-    EMOTION_NAMES = ['neutral', 'happy', 'sad', 'surprise', 'anger']
+    EMOTION_NAMES = ['neutral', 'happy', 'ad', 'urprise', 'anger']
     show_image = image.copy()
 
     for i in range(len(face_boxes)):
         xmin, ymin, xmax, ymax = face_boxes[i]
         face = image[ymin:ymax, xmin:xmax]
 
-        if face.size == 0 or len(face.shape) != 3 or face.shape[2] != 3:
+        if face.size == 0 or len(face.shape)!= 3 or face.shape[2]!= 3:
             print(f"Skipping empty or invalid face image at index {i}.")
             continue
 
@@ -85,10 +85,11 @@ def predict_image(image, conf_threshold):
         face_boxes, scores = find_faceboxes(image, results, conf_threshold)
         if len(face_boxes) == 0:
             print("No face boxes found.")
+            return image
         else:
             print(f"Found {len(face_boxes)} face boxes.")
-        visualize_image = draw_age_gender_emotion(face_boxes, image)
-        return visualize_image
+            visualize_image = draw_age_gender_emotion(face_boxes, image)
+            return visualize_image
     except Exception as e:
         print(f"Error in predict_image: {e}")
         return image
