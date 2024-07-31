@@ -16,8 +16,12 @@ def play_video(video_source):
     while(camera.isOpened()):
         ret, frame = camera.read()
         if ret:
-            visualized_image = utility.predict_image(frame, conf_threshold)
-            st_frame.image(visualized_image, channels = "BGR")
+            try:
+                visualized_image = utility.predict_image(frame, conf_threshold)
+                st_frame.image(visualized_image, channels="BGR")
+            except Exception as e:
+                st.error(f"Error processing frame: {e}")
+                break
         else:
             camera.release()
             break
@@ -53,18 +57,21 @@ else:
     source_radio = st.sidebar.radio("Select Source", ["IMAGE", "VIDEO", "WEBCAM"])
 
     st.sidebar.header("Confidence")
-    conf_threshold = float(st.sidebar.slider("Select the Confidence Threshold", 10, 100, 20))/100
+    conf_threshold = float(st.sidebar.slider("Select the Confidence Threshold", 10, 100, 20)) / 100
 
     input = None
     if source_radio == "IMAGE":
         st.sidebar.header("Upload")
-        input = st.sidebar.file_uploader("Choose an image", type = ("jpg", "png"))
+        input = st.sidebar.file_uploader("Choose an image", type=("jpg", "png"))
 
         if input is not None:
-            uploaded_image = PIL.Image.open(input)
-            uploaded_image_cv = cv2.cvtColor(np.array(uploaded_image), cv2.COLOR_RGB2BGR)
-            visualized_image = utility.predict_image(uploaded_image_cv, conf_threshold)
-            st.image(visualized_image, channels = "BGR")
+            try:
+                uploaded_image = PIL.Image.open(input)
+                uploaded_image_cv = cv2.cvtColor(np.array(uploaded_image), cv2.COLOR_RGB2BGR)
+                visualized_image = utility.predict_image(uploaded_image_cv, conf_threshold)
+                st.image(visualized_image, channels="BGR")
+            except Exception as e:
+                st.error(f"Error processing image: {e}")
         else:
             st.image("assets/thumbnail.jpg")
             st.write("Click on 'Browse Files' in the sidebar to run inference on an image.")
@@ -72,7 +79,7 @@ else:
     temporary_location = None
     if source_radio == "VIDEO":
         st.sidebar.header("Upload")
-        input = st.sidebar.file_uploader("Choose a video", type = ("mp4"))
+        input = st.sidebar.file_uploader("Choose a video", type=("mp4"))
 
         if input is not None:
             g = io.BytesIO(input.read())
