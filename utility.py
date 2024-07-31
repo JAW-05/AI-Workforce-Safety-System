@@ -34,12 +34,13 @@ def find_faceboxes(image, results, confidence_threshold):
     scores = results[:, 2]
     boxes = results[:, -4:]
 
-    face_boxes = boxes[scores >= confidence_threshold]
-    scores = scores[scores >= confidence_threshold]
+    high_conf_indices = scores >= confidence_threshold
+    face_boxes = boxes[high_conf_indices]
+    scores = scores[high_conf_indices]
 
     image_h, image_w, _ = image.shape
     face_boxes = face_boxes * np.array([image_w, image_h, image_w, image_h])
-    face_boxes = face_boxes.astype(np.int64)
+    face_boxes = face_boxes.astype(np.int32)
 
     return face_boxes, scores
 
@@ -68,7 +69,7 @@ def draw_age_gender_emotion(face_boxes, image):
             gender_str = "female" if gender[0] > 0.65 else "male" if gender[1] >= 0.55 else "unknown"
             box_color = (200, 200, 0) if gender_str == "female" else (0, 200, 200) if gender_str == "male" else (200, 200, 200)
 
-            font_scale = image.shape[1] / 750
+            font_scale = max(0.5, image.shape[1] / 750)
             text = f"{gender_str} {age} {EMOTION_NAMES[index]}"
             print(f"Drawing box for {text} at {xmin}, {ymin}, {xmax}, {ymax}")
             cv2.putText(show_image, text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), 2)
