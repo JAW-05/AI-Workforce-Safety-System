@@ -36,11 +36,20 @@ def find_faceboxes(image, results, confidence_threshold):
     scores = results[:, 2]
     boxes = results[:, -4:]
 
-    face_boxes = boxes[scores >= confidence_threshold]
-    scores = scores[scores >= confidence_threshold]
+    # Filter boxes by confidence threshold
+    mask = scores >= confidence_threshold
+    scores = scores[mask]
+    boxes = boxes[mask]
 
+    # Filter out boxes with invalid values (NaN, Inf, or negative coordinates)
+    valid_mask = np.all(np.isfinite(boxes), axis=1) & np.all(boxes >= 0, axis=1)
+    boxes = boxes[valid_mask]
+    scores = scores[valid_mask]
+
+    # Convert coordinates to image scale
     image_h, image_w, _ = image.shape
-    face_boxes = face_boxes * np.array([image_w, image_h, image_w, image_h])
+    face_boxes = boxes * np.array([image_w, image_h, image_w, image_h])
+    face_boxes = np.clip(face_boxes, 0, [image_w, image_h, image_w, image_h])  # Ensure box is within image boundaries
     face_boxes = face_boxes.astype(np.int64)
 
     return face_boxes, scores
