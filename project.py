@@ -73,7 +73,7 @@ else:
             except Exception as e:
                 st.error(f"Error processing image: {e}")
         else:
-            st.image("assets/thumbnail.jpg")
+            st.image("assets/thumbnail2.png")
             st.write("Click on 'Browse Files' in the sidebar to run inference on an image.")
 
     temporary_location = None
