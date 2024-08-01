@@ -91,7 +91,7 @@ else:
         if temporary_location is not None:
             play_video(temporary_location)
         else:
-            st.video("assets/thumbnail.jpg")
+            st.video("assets/thumbnail2.png")
             st.write("Click on 'Browse Files' in the sidebar to run inference on a video.")
 
     if source_radio == "WEBCAM":
